@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Локальный Интерком (Оффлайн P2P)</title>
+  <title>Локальный Интерком P2P</title>
 
-  <!-- PWA Meta -->
+  <!-- PWA настройки -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#121212">
 
-  <!-- Библиотеки: Генератор QR, Сканер QR (jsQR) и опциональный PeerJS для локального IP -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <!-- Безопасное подключение библиотек (с fallback на текстовый режим при отсутствии сети) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
@@ -53,7 +54,7 @@
       display: none;
       flex-direction: column;
       height: 100%;
-      padding: 20px;
+      padding: 16px;
       max-width: 480px;
       margin: 0 auto;
       width: 100%;
@@ -64,40 +65,12 @@
       display: flex;
     }
 
-    /* Навигация / Табы режима */
-    .tabs {
-      display: flex;
-      background: var(--surface-light);
-      border-radius: var(--radius-md);
-      padding: 3px;
-      margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 600;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background: var(--surface);
-      color: var(--text);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    }
-
     .card {
       background: var(--surface);
       border-radius: var(--radius-lg);
-      padding: 20px;
+      padding: 18px;
       border: 1px solid var(--border);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .card-title {
@@ -105,15 +78,15 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: var(--text-muted);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       font-weight: 700;
     }
 
     .btn {
       width: 100%;
-      padding: 16px;
+      padding: 15px;
       border-radius: var(--radius-md);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       border: none;
       cursor: pointer;
@@ -121,12 +94,13 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-bottom: 10px;
-      transition: transform 0.1s;
+      margin-bottom: 8px;
+      transition: transform 0.1s, opacity 0.2s;
     }
 
     .btn:active {
       transform: scale(0.98);
+      opacity: 0.9;
     }
 
     .btn-primary { background: var(--accent-blue); color: #fff; }
@@ -134,24 +108,31 @@
     .btn-secondary { background: var(--surface-light); color: var(--text); }
     .btn-danger { background: var(--accent-red); color: #fff; }
 
-    .input-field {
+    .input-field, .textarea-field {
       width: 100%;
       background: var(--surface-light);
       border: 1px solid transparent;
       outline: none;
-      padding: 14px 16px;
+      padding: 12px 14px;
       border-radius: var(--radius-md);
       color: var(--text);
-      font-size: 16px;
-      margin-bottom: 12px;
+      font-size: 14px;
+      margin-bottom: 10px;
       user-select: text;
     }
 
-    .input-field:focus {
+    .textarea-field {
+      height: 70px;
+      resize: none;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .input-field:focus, .textarea-field:focus {
       border-color: var(--accent-blue);
     }
 
-    /* Статусная панель */
+    /* Статус-бар */
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -175,31 +156,34 @@
     .status-dot.waiting { background: var(--accent-yellow); }
     .status-dot.error { background: var(--accent-red); }
 
-    /* Окно QR и Сканера */
-    .qr-container {
+    /* QR контейнер */
+    .qr-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 15px;
       background: #fff;
+      padding: 12px;
       border-radius: var(--radius-md);
-      margin: 15px auto;
+      margin: 10px auto;
       width: fit-content;
     }
 
     #qrCanvas {
       display: block;
+      max-width: 200px;
+      max-height: 200px;
     }
 
+    /* Сканер */
     .scanner-view {
       position: relative;
       width: 100%;
-      height: 280px;
+      height: 240px;
       background: #000;
       border-radius: var(--radius-md);
       overflow: hidden;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     #scannerVideo {
@@ -208,31 +192,31 @@
       object-fit: cover;
     }
 
-    .scanner-overlay {
+    .scanner-box-guide {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 180px;
-      height: 180px;
+      width: 160px;
+      height: 160px;
       transform: translate(-50%, -50%);
       border: 2px dashed var(--accent-green);
-      border-radius: 16px;
-      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.45);
+      border-radius: 12px;
+      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.4);
       pointer-events: none;
     }
 
-    /* Экран активного разговора */
+    /* Экран разговора */
     .mic-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: 20px 0;
+      margin: 16px 0;
     }
 
     .btn-mic {
-      width: 140px;
-      height: 140px;
+      width: 135px;
+      height: 135px;
       border-radius: 50%;
       border: none;
       outline: none;
@@ -258,19 +242,18 @@
     }
 
     .btn-mic svg {
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
       fill: currentColor;
     }
 
     .mic-label {
-      margin-top: 12px;
-      font-size: 15px;
+      margin-top: 10px;
+      font-size: 14px;
       font-weight: 700;
-      letter-spacing: 0.5px;
     }
 
-    /* Сессионный чат */
+    /* Чат */
     .chat-card {
       flex: 1;
       display: flex;
@@ -279,8 +262,8 @@
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       padding: 12px;
-      min-height: 140px;
-      margin-top: 10px;
+      min-height: 120px;
+      margin-top: 8px;
     }
 
     .chat-messages {
@@ -289,7 +272,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       user-select: text;
     }
 
@@ -304,95 +287,97 @@
     .msg.me { align-self: flex-end; background: var(--accent-blue); color: #fff; }
     .msg.remote { align-self: flex-start; background: var(--surface-light); }
 
-    /* Селекторы аудио */
     .audio-select {
       width: 100%;
       background: var(--surface-light);
       border: 1px solid var(--border);
-      padding: 10px 14px;
+      padding: 10px 12px;
       border-radius: var(--radius-md);
       color: var(--text);
-      font-size: 14px;
-      margin-bottom: 10px;
+      font-size: 13px;
+      margin-bottom: 8px;
       outline: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- Аудио воспроизведения -->
   <audio id="remoteAudio" autoplay playsinline></audio>
 
   <!-- ================= ЭКРАН 1: ПОДКЛЮЧЕНИЕ ================= -->
   <div id="screenConnect" class="screen active">
-    <div style="text-align: center; margin-bottom: 18px;">
-      <h1 style="font-size: 22px; font-weight: 800;">Локальный Интерком</h1>
-      <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Прямая P2P связь без серверов и интернета</p>
+    <div style="text-align: center; margin-bottom: 16px;">
+      <h1 style="font-size: 20px; font-weight: 800;">Локальный Интерком</h1>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Связь по Wi-Fi / Точке доступа без интернета</p>
     </div>
 
-    <!-- Вкладки режимов -->
-    <div class="tabs">
-      <button class="tab-btn active" id="tabOffline">📷 Оффлайн QR (P2P)</button>
-      <button class="tab-btn" id="tabLocalIP">🌐 По локальному IP</button>
+    <!-- Стартовые кнопки -->
+    <div id="startSection" class="card">
+      <div class="card-title">Создать или войти</div>
+      <button class="btn btn-success" id="btnCreateRoom">📡 Создать комнату (Хост)</button>
+      <button class="btn btn-primary" id="btnJoinRoom">🔗 Присоединиться (Клиент)</button>
     </div>
 
-    <!-- БЛОК 1: РЕЖИМ ОФФЛАЙН QR -->
-    <div id="sectionOffline">
-      <div class="card" id="offlineInitial">
-        <div class="card-title">Оффлайн рация через точку доступа</div>
-        <button class="btn btn-success" id="btnHostCreate">📡 Создать комнату</button>
-        <button class="btn btn-primary" id="btnClientJoin">🔍 Присоединиться (Камера)</button>
+    <!-- БЛОК СОЗДАТЕЛЯ: QR + Код комнаты -->
+    <div id="hostSection" class="card" style="display: none; text-align: center;">
+      <div class="card-title">1. Передайте этот ключ собеседнику</div>
+      
+      <!-- Контейнер QR (если доступен) -->
+      <div id="qrHostWrap" class="qr-wrap" style="display: none;">
+        <canvas id="qrCanvas"></canvas>
       </div>
 
-      <!-- Шаг Создателя: Показ своего Offer QR -->
-      <div class="card" id="hostQrBox" style="display: none; text-align: center;">
-        <div class="card-title">1. Покажите этот код напарнику</div>
-        <div class="qr-container">
-          <canvas id="qrCanvas"></canvas>
-        </div>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
-          Напарник должен нажать <b>«Присоединиться»</b> и отсканировать этот экран
-        </p>
-        <button class="btn btn-primary" id="btnHostScanAnswer">📷 2. Отсканировать ответ напарника</button>
-        <button class="btn btn-secondary" onclick="resetToHome()">Отмена</button>
-      </div>
+      <button class="btn btn-secondary" id="btnCopyOffer">📋 Скопировать код комнаты</button>
 
-      <!-- Окно Сканера Камеры (для обоих) -->
-      <div class="card" id="scannerBox" style="display: none;">
-        <div class="card-title" id="scannerTitle">Сканирование QR-кода</div>
-        <div class="scanner-view">
-          <video id="scannerVideo" playsinline></video>
-          <div class="scanner-overlay"></div>
-        </div>
-        <button class="btn btn-secondary" onclick="stopScanner(); resetToHome();">Закрыть сканер</button>
+      <div style="margin: 14px 0 6px 0; text-align: left;">
+        <div class="card-title">2. Ответ от собеседника:</div>
+        <input type="text" id="hostAnswerInput" class="input-field" placeholder="Вставьте ответ собеседника сюда">
+        <button class="btn btn-primary" id="btnHostApplyAnswer">Подтвердить и начать связь</button>
+        <button class="btn btn-secondary" id="btnHostScanAnswer">📷 Или отсканировать его QR-ответ</button>
       </div>
-
-      <!-- Шаг Подключающегося: Показ Answer QR создателю -->
-      <div class="card" id="clientAnswerBox" style="display: none; text-align: center;">
-        <div class="card-title">Покажите этот ответ Создателю</div>
-        <div class="qr-container">
-          <canvas id="answerQrCanvas"></canvas>
-        </div>
-        <p style="font-size: 13px; color: var(--accent-green); font-weight: 600;">
-          Создатель должен нажать «Отсканировать ответ» и навести камеру сюда
-        </p>
-        <button class="btn btn-secondary" onclick="resetToHome()">Отмена</button>
-      </div>
+      <button class="btn btn-secondary" onclick="resetUI()">Отмена</button>
     </div>
 
-    <!-- БЛОК 2: РЕЖИМ ЛОКАЛЬНОГО IP СЕРВЕРА -->
-    <div id="sectionLocalIP" style="display: none;">
-      <div class="card">
-        <div class="card-title">Подключение по IP (если запущен сервер)</div>
-        <input type="text" id="serverIpInput" class="input-field" placeholder="IP сервера (напр. 192.168.43.1)">
-        <input type="text" id="serverPortInput" class="input-field" placeholder="Порт" value="9000">
-        <input type="text" id="targetPeerInput" class="input-field" placeholder="Код собеседника">
-        <button class="btn btn-primary" id="btnConnectIp">Подключиться по IP</button>
-      </div>
+    <!-- БЛОК ПОДКЛЮЧАЮЩЕГОСЯ: Ввод кода или Сканер -->
+    <div id="joinSection" class="card" style="display: none;">
+      <div class="card-title">Подключение к создателю</div>
+
+      <button class="btn btn-primary" id="btnStartCameraScan">📷 Отсканировать QR создателя</button>
+      
+      <div style="text-align: center; margin: 10px 0; color: var(--text-muted); font-size: 12px;">ИЛИ ВВЕДИТЕ ВРУЧНУЮ:</div>
+
+      <textarea id="joinOfferInput" class="textarea-field" placeholder="Вставьте скопированный код создателя"></textarea>
+      <button class="btn btn-success" id="btnApplyOfferText">Создать ответный ключ</button>
+      <button class="btn btn-secondary" onclick="resetUI()">Отмена</button>
     </div>
 
-    <!-- Статус бар на первом экране -->
-    <div style="text-align: center; margin-top: auto; padding-top: 10px;">
+    <!-- БЛОК ОТВЕТА КЛИЕНТА (показать создателю) -->
+    <div id="clientAnswerSection" class="card" style="display: none; text-align: center;">
+      <div class="card-title">Передайте этот ответ Создателю</div>
+      
+      <div id="qrClientWrap" class="qr-wrap" style="display: none;">
+        <canvas id="answerQrCanvas"></canvas>
+      </div>
+
+      <button class="btn btn-secondary" id="btnCopyAnswer">📋 Скопировать код ответа</button>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+        Создатель должен отсканировать этот QR или вставить скопированный код в свое поле.
+      </p>
+      <button class="btn btn-secondary" onclick="resetUI()" style="margin-top: 10px;">Отмена</button>
+    </div>
+
+    <!-- ОКНО КАМЕРЫ (СКАНИРОВАНИЕ) -->
+    <div id="scannerSection" class="card" style="display: none;">
+      <div class="card-title" id="scannerTitle">Сканирование QR</div>
+      <div class="scanner-view">
+        <video id="scannerVideo" playsinline></video>
+        <div class="scanner-box-guide"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="stopScanner(); resetUI();">Закрыть сканер</button>
+    </div>
+
+    <!-- Статус бар -->
+    <div style="text-align: center; margin-top: auto; padding-top: 8px;">
       <div class="status-badge">
         <div class="status-dot waiting" id="homeStatusDot"></div>
         <span id="homeStatusText">В локальной сети. Создайте комнату</span>
@@ -404,15 +389,15 @@
   <div id="screenTalk" class="screen">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div class="status-badge">
-        <div class="status-dot connected" id="talkStatusDot"></div>
-        <span id="talkStatusText">Прямой эфир (0 ms)</span>
+        <div class="status-dot connected"></div>
+        <span>Прямой эфир (P2P)</span>
       </div>
-      <button class="btn btn-danger" id="btnDisconnect" style="width: auto; padding: 8px 16px; margin: 0; font-size: 14px;">Выйти</button>
+      <button class="btn btn-danger" id="btnHangup" style="width: auto; padding: 8px 14px; margin: 0; font-size: 13px;">Завершить</button>
     </div>
 
-    <!-- Центральная кнопка рации с индикатором голоса (VU) -->
+    <!-- Кнопка микрофона с динамическим VU-метром -->
     <div class="mic-container">
-      <button class="btn-mic active" id="btnMicToggle">
+      <button class="btn-mic active" id="btnMic">
         <svg viewBox="0 0 24 24">
           <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
@@ -421,62 +406,67 @@
       <div class="mic-label" id="micLabel" style="color: var(--accent-green);">МИКРОФОН ВКЛ</div>
     </div>
 
-    <!-- Выбор устройств (Ввод / Вывод) прямо на экране -->
-    <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border);">
-      <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">ВХОД (МИКРОФОН)</div>
+    <!-- Селекторы ввода/вывода -->
+    <div style="background: var(--surface); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+      <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-bottom: 2px;">МИКРОФОН (ВХОД)</div>
       <select class="audio-select" id="micSelect"></select>
 
-      <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">ВЫХОД (ДИНАМИК)</div>
+      <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-bottom: 2px;">ДИНАМИК (ВЫХОД)</div>
       <select class="audio-select" id="speakerSelect"></select>
     </div>
 
-    <!-- Чат -->
+    <!-- Чат внутри сессии -->
     <div class="chat-card">
       <div class="chat-messages" id="chatBox"></div>
-      <div style="display: flex; gap: 8px;">
+      <div style="display: flex; gap: 6px;">
         <input type="text" id="chatInput" class="input-field" placeholder="Сообщение..." style="margin: 0;">
-        <button class="btn btn-primary" id="btnSend" style="width: 50px; margin: 0; padding: 0;">➔</button>
+        <button class="btn btn-primary" id="btnSend" style="width: 48px; margin: 0; padding: 0;">➔</button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- ПЕРЕМЕННЫЕ WEBRTC И АУДИО ---
+    // --- ПЕРЕМЕННЫЕ WEBRTC ---
     let pc = null;
     let dataChannel = null;
     let localStream = null;
     let isMuted = false;
+    let localOfferString = '';
+    let localAnswerString = '';
+
     let selectedMicId = '';
     let selectedSpeakerId = '';
 
-    // VU-метр (анимация голоса на кнопке)
+    // Аудио контекст (VU-метр)
     let audioCtx = null;
     let analyser = null;
     let vuData = null;
 
-    // Сканер камеры
+    // Сканер
     let scannerStream = null;
-    let scannerScanActive = false;
+    let scanActive = false;
 
-    // PeerJS (для режима IP)
-    let peerInstance = null;
-
-    // DOM Элементы
+    // DOM
     const screenConnect = document.getElementById('screenConnect');
     const screenTalk = document.getElementById('screenTalk');
     const remoteAudio = document.getElementById('remoteAudio');
 
-    const offlineInitial = document.getElementById('offlineInitial');
-    const hostQrBox = document.getElementById('hostQrBox');
-    const scannerBox = document.getElementById('scannerBox');
-    const clientAnswerBox = document.getElementById('clientAnswerBox');
+    const startSection = document.getElementById('startSection');
+    const hostSection = document.getElementById('hostSection');
+    const joinSection = document.getElementById('joinSection');
+    const clientAnswerSection = document.getElementById('clientAnswerSection');
+    const scannerSection = document.getElementById('scannerSection');
+
+    const qrHostWrap = document.getElementById('qrHostWrap');
+    const qrClientWrap = document.getElementById('qrClientWrap');
     const qrCanvas = document.getElementById('qrCanvas');
     const answerQrCanvas = document.getElementById('answerQrCanvas');
     const scannerVideo = document.getElementById('scannerVideo');
 
     const homeStatusText = document.getElementById('homeStatusText');
     const homeStatusDot = document.getElementById('homeStatusDot');
-    const btnMicToggle = document.getElementById('btnMicToggle');
+
+    const btnMic = document.getElementById('btnMic');
     const micLabel = document.getElementById('micLabel');
     const micSelect = document.getElementById('micSelect');
     const speakerSelect = document.getElementById('speakerSelect');
@@ -484,46 +474,78 @@
     const chatBox = document.getElementById('chatBox');
     const chatInput = document.getElementById('chatInput');
 
-    // --- СЖАТИЕ SDP ДЛЯ МИНИМАЛЬНОГО РАЗМЕРА QR-КОДА ---
-    async function compressSDP(sdp) {
-      // Оставляем только нужные аудио-параметры и локальные IP-кандидаты
-      const filtered = sdp.split('\r\n').filter(line => {
-        return !line.startsWith('a=extmap:') && 
-               !line.startsWith('a=rtcp-fb:') && 
-               !line.startsWith('a=fmtp:') &&
-               !line.startsWith('a=ssrc:');
-      }).join('\r\n');
+    // --- БЕЗОПАСНАЯ ГЕНЕРАЦИЯ QR (С ЗАЩИТОЙ ОТ ОТСУТСТВИЯ БИБЛИОТЕК) ---
+    function renderSafeQR(canvasEl, wrapEl, text) {
+      wrapEl.style.display = 'none';
 
-      if (typeof CompressionStream !== 'undefined') {
-        const cs = new CompressionStream('deflate-raw');
-        const writer = cs.writable.getWriter();
-        writer.write(new TextEncoder().encode(filtered));
-        writer.close();
-        const buffer = await new Response(cs.readable).arrayBuffer();
-        let bin = '';
-        new Uint8Array(buffer).forEach(b => bin += String.fromCharCode(b));
-        return 'Z:' + btoa(bin);
+      // 1. Пробуем QRious
+      if (typeof QRious !== 'undefined') {
+        try {
+          new QRious({ element: canvasEl, value: text, size: 200, level: 'L' });
+          wrapEl.style.display = 'block';
+          return true;
+        } catch (e) { console.warn(e); }
       }
-      return 'R:' + encodeURIComponent(filtered);
+
+      // 2. Пробуем QRCode (David Shim)
+      if (typeof QRCode !== 'undefined') {
+        try {
+          wrapEl.innerHTML = '';
+          new QRCode(wrapEl, { text: text, width: 200, height: 200 });
+          wrapEl.style.display = 'block';
+          return true;
+        } catch (e) { console.warn(e); }
+      }
+
+      // Если в оффлайне библиотеки не загрузились — не крашимся, просто скрываем canvas
+      return false;
     }
 
-    async function decompressSDP(payload) {
-      if (payload.startsWith('Z:')) {
-        const bin = atob(payload.slice(2));
+    // --- СЖАТИЕ SDP ДЛЯ УМЕНЬШЕНИЯ РАЗМЕРА КЛЮЧА ---
+    async function packSDP(sdp) {
+      // Отсекаем избыточные строки браузера, оставляем локальные IP кандидаты и аудио
+      const lines = sdp.split('\r\n').filter(l => 
+        !l.startsWith('a=extmap:') && 
+        !l.startsWith('a=rtcp-fb:') && 
+        !l.startsWith('a=fmtp:') &&
+        !l.startsWith('a=ssrc:')
+      ).join('\r\n');
+
+      if (typeof CompressionStream !== 'undefined') {
+        try {
+          const cs = new CompressionStream('deflate-raw');
+          const writer = cs.writable.getWriter();
+          writer.write(new TextEncoder().encode(lines));
+          writer.close();
+          const buf = await new Response(cs.readable).arrayBuffer();
+          let bin = '';
+          new Uint8Array(buf).forEach(b => bin += String.fromCharCode(b));
+          return 'Z:' + btoa(bin);
+        } catch(e) {}
+      }
+      return 'R:' + encodeURIComponent(lines);
+    }
+
+    async function unpackSDP(str) {
+      if (str.startsWith('Z:')) {
+        const bin = atob(str.slice(2));
         const bytes = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
         const ds = new DecompressionStream('deflate-raw');
         const writer = ds.writable.getWriter();
         writer.write(bytes);
         writer.close();
-        const buffer = await new Response(ds.readable).arrayBuffer();
-        return new TextDecoder().decode(buffer);
+        const buf = await new Response(ds.readable).arrayBuffer();
+        return new TextDecoder().decode(buf);
       }
-      return decodeURIComponent(payload.slice(2));
+      if (str.startsWith('R:')) {
+        return decodeURIComponent(str.slice(2));
+      }
+      return str;
     }
 
-    // --- НАСТРОЙКА АУДИОПОТОКА ---
-    async function initLocalAudio() {
+    // --- ИНИЦИАЛИЗАЦИЯ МИКРОФОНА С ПОДАВЛЕНИЕМ ШУМА ---
+    async function getAudio() {
       if (localStream) return localStream;
 
       const constraints = {
@@ -532,23 +554,26 @@
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          latency: 0,
-          channelCount: 1
+          latency: 0
         }
       };
-
       if (selectedMicId) {
         constraints.audio.deviceId = { exact: selectedMicId };
       }
 
-      localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setupVUMeter(localStream);
-      await refreshDeviceList();
-      return localStream;
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        initVU(localStream);
+        await updateDevices();
+        return localStream;
+      } catch (err) {
+        alert('Ошибка доступа к микрофону: ' + err.message + '\nУбедитесь, что страница открыта по HTTPS или localhost.');
+        throw err;
+      }
     }
 
-    // VU-метр: кнопка мягко увеличивается и светится при разговоре
-    function setupVUMeter(stream) {
+    // VU-метр
+    function initVU(stream) {
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const src = audioCtx.createMediaStreamSource(stream);
@@ -557,53 +582,51 @@
         src.connect(analyser);
         vuData = new Uint8Array(analyser.frequencyBinCount);
 
-        function drawVU() {
+        function tick() {
           if (!analyser || isMuted) {
-            btnMicToggle.style.transform = 'scale(1)';
-            requestAnimationFrame(drawVU);
+            btnMic.style.transform = 'scale(1)';
+            requestAnimationFrame(tick);
             return;
           }
           analyser.getByteFrequencyData(vuData);
           let sum = 0;
           for (let i = 0; i < vuData.length; i++) sum += vuData[i];
-          const vol = sum / vuData.length;
-          const scale = 1 + (vol / 255) * 0.16;
-          btnMicToggle.style.transform = `scale(${scale})`;
-          requestAnimationFrame(drawVU);
+          const avg = sum / vuData.length;
+          const scale = 1 + (avg / 255) * 0.15;
+          btnMic.style.transform = `scale(${scale})`;
+          requestAnimationFrame(tick);
         }
-        drawVU();
-      } catch (e) {
-        console.warn('VU meter not supported', e);
-      }
+        tick();
+      } catch(e) {}
     }
 
-    // --- УСТРОЙСТВА ВЫВОДА / ВВОДА ---
-    async function refreshDeviceList() {
+    // --- УСТРОЙСТВА ВЫВОДА И ВВОДА ---
+    async function updateDevices() {
       if (!navigator.mediaDevices?.enumerateDevices) return;
       const devices = await navigator.mediaDevices.enumerateDevices();
 
       micSelect.innerHTML = '';
       devices.filter(d => d.kind === 'audioinput').forEach((d, i) => {
-        const opt = document.createElement('option');
-        opt.value = d.deviceId;
-        opt.text = d.label || `Микрофон ${i + 1}`;
-        if (d.deviceId === selectedMicId) opt.selected = true;
-        micSelect.appendChild(opt);
+        const o = document.createElement('option');
+        o.value = d.deviceId;
+        o.text = d.label || `Микрофон ${i + 1}`;
+        if (d.deviceId === selectedMicId) o.selected = true;
+        micSelect.appendChild(o);
       });
 
       speakerSelect.innerHTML = '';
       if ('setSinkId' in HTMLMediaElement.prototype) {
         devices.filter(d => d.kind === 'audiooutput').forEach((d, i) => {
-          const opt = document.createElement('option');
-          opt.value = d.deviceId;
-          opt.text = d.label || `Динамик ${i + 1}`;
-          if (d.deviceId === selectedSpeakerId) opt.selected = true;
-          speakerSelect.appendChild(opt);
+          const o = document.createElement('option');
+          o.value = d.deviceId;
+          o.text = d.label || `Динамик ${i + 1}`;
+          if (d.deviceId === selectedSpeakerId) o.selected = true;
+          speakerSelect.appendChild(o);
         });
       } else {
-        const opt = document.createElement('option');
-        opt.text = 'Управляется системой (iOS)';
-        speakerSelect.appendChild(opt);
+        const o = document.createElement('option');
+        o.text = 'Вывод управляется системой (iOS)';
+        speakerSelect.appendChild(o);
         speakerSelect.disabled = true;
       }
     }
@@ -613,7 +636,7 @@
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         localStream = null;
-        const newStream = await initLocalAudio();
+        const newStream = await getAudio();
         const newTrack = newStream.getAudioTracks()[0];
         newTrack.enabled = !isMuted;
         if (pc) {
@@ -630,118 +653,29 @@
       }
     };
 
-    // --- БАЗОВАЯ КОНФИГУРАЦИЯ WEBRTC (БЕЗ ВНЕШНИХ СЕРВЕРОВ) ---
-    function createPeerConnection() {
-      // iceServers: [] гарантирует работу в закрытой локальной сети (только local host IP)
+    // --- WEBRTC ПОДКЛЮЧЕНИЕ ---
+    function initPC() {
       pc = new RTCPeerConnection({ iceServers: [] });
 
-      pc.ontrack = (event) => {
-        remoteAudio.srcObject = event.streams[0];
+      pc.ontrack = (e) => {
+        remoteAudio.srcObject = e.streams[0];
         remoteAudio.play().catch(() => {});
-        switchToTalkScreen();
+        openTalkScreen();
       };
 
       pc.oniceconnectionstatechange = () => {
         if (pc.iceConnectionState === 'connected') {
-          switchToTalkScreen();
+          openTalkScreen();
         } else if (['failed', 'disconnected', 'closed'].includes(pc.iceConnectionState)) {
-          updateHomeStatus('Связь потеряна. Проверьте Wi-Fi', 'error');
+          setHomeStatus('Связь прервана. Проверьте Wi-Fi', 'error');
         }
       };
 
       return pc;
     }
 
-    // --- ШАГ 1: СОЗДАТЕЛЬ (HOST) СОЗДАЕТ КОМНАТУ ---
-    document.getElementById('btnHostCreate').onclick = async () => {
-      try {
-        updateHomeStatus('Подготовка аудио...', 'waiting');
-        const stream = await initLocalAudio();
-        createPeerConnection();
-
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        // Создаем канал чата
-        dataChannel = pc.createDataChannel('intercomChat');
-        setupChatChannel(dataChannel);
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        // Ждем сбор локальных IP-кандидатов (в локалке это < 300мс)
-        await waitForLocalCandidates(pc);
-
-        const compressed = await compressSDP(pc.localDescription.sdp);
-
-        // Рисуем компактный QR
-        QRCode.toCanvas(qrCanvas, compressed, { width: 220, margin: 1 }, (err) => {
-          if (err) alert('Ошибка создания QR: ' + err);
-        });
-
-        offlineInitial.style.display = 'none';
-        hostQrBox.style.display = 'block';
-        updateHomeStatus('Ожидание подключения напарника...', 'waiting');
-      } catch (err) {
-        alert('Ошибка создания комнаты: ' + err.message);
-      }
-    };
-
-    // Создатель включает камеру для ответа напарника
-    document.getElementById('btnHostScanAnswer').onclick = () => {
-      hostQrBox.style.display = 'none';
-      startScanner('Отсканируйте ответный QR напарника', async (scannedData) => {
-        try {
-          const answerSdp = await decompressSDP(scannedData);
-          await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answerSdp }));
-          stopScanner();
-          switchToTalkScreen();
-        } catch (e) {
-          alert('Неверный код ответа: ' + e.message);
-        }
-      });
-    };
-
-    // --- ШАГ 2: КЛИЕНТ ПРИСОЕДИНЯЕТСЯ И СКАНИРУЕТ OFFER ---
-    document.getElementById('btnClientJoin').onclick = () => {
-      offlineInitial.style.display = 'none';
-      startScanner('Наведите на экран Создателя комнаты', async (scannedData) => {
-        try {
-          stopScanner();
-          updateHomeStatus('Связывание...', 'waiting');
-          const stream = await initLocalAudio();
-          createPeerConnection();
-
-          stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-          pc.ondatachannel = (e) => {
-            dataChannel = e.channel;
-            setupChatChannel(dataChannel);
-          };
-
-          const offerSdp = await decompressSDP(scannedData);
-          await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: offerSdp }));
-
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-
-          await waitForLocalCandidates(pc);
-
-          const compressedAnswer = await compressSDP(pc.localDescription.sdp);
-
-          // Показываем ответный QR для создателя
-          QRCode.toCanvas(answerQrCanvas, compressedAnswer, { width: 220, margin: 1 });
-          clientAnswerBox.style.display = 'block';
-          updateHomeStatus('Покажите экран создателю комнаты', 'waiting');
-        } catch (e) {
-          alert('Ошибка считывания кода: ' + e.message);
-          resetToHome();
-        }
-      });
-    };
-
-    // Ожидание локальных ICE кандидатов (без STUN)
-    function waitForLocalCandidates(peerConn) {
-      return new Promise((resolve) => {
+    function waitCandidates(peerConn) {
+      return new Promise(resolve => {
         if (peerConn.iceGatheringState === 'complete') {
           resolve();
         } else {
@@ -752,191 +686,264 @@
             }
           };
           peerConn.addEventListener('icegatheringstatechange', check);
-          setTimeout(resolve, 800); // Страховочный таймаут
+          setTimeout(resolve, 800); // 800мс таймаут для сбора локальных IP
         }
       });
     }
 
-    // --- СКАНЕР КАМЕРЫ (JSQR) ---
-    async function startScanner(title, onDetectedCallback) {
-      scannerBox.style.display = 'block';
+    // --- ШАГ 1: ХОСТ СОЗДАЕТ КОМНАТУ ---
+    document.getElementById('btnCreateRoom').onclick = async () => {
+      try {
+        setHomeStatus('Инициализация аудио...', 'waiting');
+        const stream = await getAudio();
+        initPC();
+
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+        dataChannel = pc.createDataChannel('chat');
+        bindChat(dataChannel);
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        await waitCandidates(pc);
+
+        localOfferString = await packSDP(pc.localDescription.sdp);
+
+        // Пробуем нарисовать QR (если библиотека есть)
+        renderSafeQR(qrCanvas, qrHostWrap, localOfferString);
+
+        startSection.style.display = 'none';
+        hostSection.style.display = 'block';
+        setHomeStatus('Ожидание подключения напарника...', 'waiting');
+      } catch (e) {
+        setHomeStatus('Ошибка создания: ' + e.message, 'error');
+      }
+    };
+
+    // Копирование кода создателя
+    document.getElementById('btnCopyOffer').onclick = () => {
+      if (!localOfferString) return;
+      navigator.clipboard.writeText(localOfferString).then(() => {
+        document.getElementById('btnCopyOffer').textContent = '✅ Код скопирован!';
+        setTimeout(() => document.getElementById('btnCopyOffer').textContent = '📋 Скопировать код комнаты', 1500);
+      });
+    };
+
+    // Применение ответа (текстом)
+    document.getElementById('btnHostApplyAnswer').onclick = async () => {
+      const ansText = document.getElementById('hostAnswerInput').value.trim();
+      if (!ansText) return alert('Вставьте ответ напарника');
+      try {
+        const unpacked = await unpackSDP(ansText);
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: unpacked }));
+        openTalkScreen();
+      } catch (e) {
+        alert('Неверный код ответа: ' + e.message);
+      }
+    };
+
+    // Сканирование ответа через камеру
+    document.getElementById('btnHostScanAnswer').onclick = () => {
+      hostSection.style.display = 'none';
+      openScanner('Отсканируйте ответный QR', async (data) => {
+        try {
+          const unpacked = await unpackSDP(data);
+          await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: unpacked }));
+          stopScanner();
+          openTalkScreen();
+        } catch(e) {
+          alert('Ошибка кода: ' + e.message);
+        }
+      });
+    };
+
+    // --- ШАГ 2: КЛИЕНТ ПРИСОЕДИНЯЕТСЯ ---
+    document.getElementById('btnJoinRoom').onclick = () => {
+      startSection.style.display = 'none';
+      joinSection.style.display = 'block';
+    };
+
+    // Клиент применяет код создателя (текстом)
+    document.getElementById('btnApplyOfferText').onclick = async () => {
+      const offerText = document.getElementById('joinOfferInput').value.trim();
+      if (!offerText) return alert('Вставьте код создателя');
+      await handleRemoteOffer(offerText);
+    };
+
+    // Клиент сканирует QR создателя
+    document.getElementById('btnStartCameraScan').onclick = () => {
+      joinSection.style.display = 'none';
+      openScanner('Наведите камеру на QR создателя', async (data) => {
+        stopScanner();
+        await handleRemoteOffer(data);
+      });
+    };
+
+    async function handleRemoteOffer(offerData) {
+      try {
+        setHomeStatus('Создание ответа...', 'waiting');
+        const stream = await getAudio();
+        initPC();
+
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+        pc.ondatachannel = (e) => {
+          dataChannel = e.channel;
+          bindChat(dataChannel);
+        };
+
+        const unpacked = await unpackSDP(offerData);
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: unpacked }));
+
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        await waitCandidates(pc);
+
+        localAnswerString = await packSDP(pc.localDescription.sdp);
+
+        renderSafeQR(answerQrCanvas, qrClientWrap, localAnswerString);
+
+        joinSection.style.display = 'none';
+        clientAnswerSection.style.display = 'block';
+        setHomeStatus('Передайте ответ создателю', 'waiting');
+      } catch (e) {
+        alert('Ошибка подключения: ' + e.message);
+        resetUI();
+      }
+    }
+
+    // Копирование ответа клиентом
+    document.getElementById('btnCopyAnswer').onclick = () => {
+      if (!localAnswerString) return;
+      navigator.clipboard.writeText(localAnswerString).then(() => {
+        document.getElementById('btnCopyAnswer').textContent = '✅ Ответ скопирован!';
+        setTimeout(() => document.getElementById('btnCopyAnswer').textContent = '📋 Скопировать код ответа', 1500);
+      });
+    };
+
+    // --- КАМЕРА / СКАНЕР (JSQR) ---
+    async function openScanner(title, callback) {
+      if (typeof jsQR === 'undefined') {
+        alert('Камера-сканер недоступен без интернета.\nПожалуйста, скопируйте и вставьте код текстом.');
+        resetUI();
+        return;
+      }
+
+      scannerSection.style.display = 'block';
       document.getElementById('scannerTitle').textContent = title;
-      scannerScanActive = true;
+      scanActive = true;
 
       try {
         scannerStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' }
         });
         scannerVideo.srcObject = scannerStream;
-        scannerVideo.setAttribute('playsinline', true);
         await scannerVideo.play();
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        const scanFrame = () => {
-          if (!scannerScanActive) return;
-
+        const loop = () => {
+          if (!scanActive) return;
           if (scannerVideo.readyState === scannerVideo.HAVE_ENOUGH_DATA) {
             canvas.height = scannerVideo.videoHeight;
             canvas.width = scannerVideo.videoWidth;
             ctx.drawImage(scannerVideo, 0, 0, canvas.width, canvas.height);
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const code = jsQR(imgData.data, imgData.width, imgData.height);
-
             if (code && code.data) {
-              if (navigator.vibrate) navigator.vibrate(50);
-              scannerScanActive = false;
-              onDetectedCallback(code.data);
+              if (navigator.vibrate) navigator.vibrate(40);
+              scanActive = false;
+              callback(code.data);
               return;
             }
           }
-          requestAnimationFrame(scanFrame);
+          requestAnimationFrame(loop);
         };
-        requestAnimationFrame(scanFrame);
-      } catch (err) {
-        alert('Камера недоступна (требуется HTTPS / localhost): ' + err.message);
+        requestAnimationFrame(loop);
+      } catch (e) {
+        alert('Камера заблокирована или недоступна: ' + e.message);
         stopScanner();
-        resetToHome();
+        resetUI();
       }
     }
 
     function stopScanner() {
-      scannerScanActive = false;
+      scanActive = false;
       if (scannerStream) {
         scannerStream.getTracks().forEach(t => t.stop());
         scannerStream = null;
       }
-      scannerBox.style.display = 'none';
+      scannerSection.style.display = 'none';
     }
 
-    // --- РЕЖИМ 2: ЛОКАЛЬНЫЙ IP СЕРВЕР (С ТАЙМАУТОМ 4 СЕКУНДЫ) ---
-    document.getElementById('btnConnectIp').onclick = async () => {
-      const hostIp = document.getElementById('serverIpInput').value.trim();
-      const port = parseInt(document.getElementById('serverPortInput').value.trim()) || 9000;
-      const targetId = document.getElementById('targetPeerInput').value.trim();
-
-      if (!hostIp) {
-        alert('Введите IP адрес сервера');
-        return;
-      }
-
-      updateHomeStatus('Поиск сервера ' + hostIp + '...', 'waiting');
-      const stream = await initLocalAudio();
-
-      let connTimeout = setTimeout(() => {
-        if (peerInstance) peerInstance.destroy();
-        updateHomeStatus('Сервер недоступен. Проверьте Wi-Fi или используйте QR-режим', 'error');
-        alert('Не удалось связаться с локальным сервером по адресу ' + hostIp + ':' + port);
-      }, 4000);
-
-      try {
-        peerInstance = new Peer({
-          host: hostIp,
-          port: port,
-          path: '/',
-          config: { iceServers: [] }
-        });
-
-        peerInstance.on('open', (id) => {
-          clearTimeout(connTimeout);
-          updateHomeStatus('Сервер найден. Соединение с собеседником...', 'waiting');
-
-          if (targetId) {
-            const call = peerInstance.call(targetId, stream);
-            call.on('stream', (remStream) => {
-              remoteAudio.srcObject = remStream;
-              remoteAudio.play();
-              switchToTalkScreen();
-            });
-          }
-        });
-
-        peerInstance.on('call', (incomingCall) => {
-          incomingCall.answer(stream);
-          incomingCall.on('stream', (remStream) => {
-            remoteAudio.srcObject = remStream;
-            remoteAudio.play();
-            switchToTalkScreen();
-          });
-        });
-
-        peerInstance.on('error', (e) => {
-          clearTimeout(connTimeout);
-          updateHomeStatus('Ошибка подключения: ' + e.type, 'error');
-        });
-      } catch (e) {
-        clearTimeout(connTimeout);
-        updateHomeStatus('Сбой инициализации IP', 'error');
-      }
-    };
-
-    // --- ЧАТ ВНУТРИ СЕССИИ ---
-    function setupChatChannel(channel) {
-      channel.onopen = () => console.log('Чат открыт');
-      channel.onmessage = (e) => appendMsg('remote', e.data);
+    // --- ЧАТ ---
+    function bindChat(channel) {
+      channel.onmessage = (e) => addChatMsg('remote', e.data);
     }
 
-    document.getElementById('btnSend').onclick = sendMsg;
-    chatInput.onkeydown = (e) => { if (e.key === 'Enter') sendMsg(); };
+    document.getElementById('btnSend').onclick = sendChatMsg;
+    chatInput.onkeydown = (e) => { if (e.key === 'Enter') sendChatMsg(); };
 
-    function sendMsg() {
+    function sendChatMsg() {
       const text = chatInput.value.trim();
       if (!text || !dataChannel || dataChannel.readyState !== 'open') return;
       dataChannel.send(text);
-      appendMsg('me', text);
+      addChatMsg('me', text);
       chatInput.value = '';
     }
 
-    function appendMsg(sender, text) {
-      const msg = document.createElement('div');
-      msg.className = `msg ${sender}`;
-      msg.textContent = text;
-      chatBox.appendChild(msg);
+    function addChatMsg(sender, text) {
+      const d = document.createElement('div');
+      d.className = `msg ${sender}`;
+      d.textContent = text;
+      chatBox.appendChild(d);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- MUTE МИКРОФОНА ---
-    btnMicToggle.onclick = () => {
+    // --- MUTE ---
+    btnMic.onclick = () => {
       isMuted = !isMuted;
       if (localStream) {
         localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
       }
       if (isMuted) {
-        btnMicToggle.className = 'btn-mic muted';
+        btnMic.className = 'btn-mic muted';
         micLabel.textContent = 'МИКРОФОН ВЫКЛ';
         micLabel.style.color = 'var(--accent-red)';
       } else {
-        btnMicToggle.className = 'btn-mic active';
+        btnMic.className = 'btn-mic active';
         micLabel.textContent = 'МИКРОФОН ВКЛ';
         micLabel.style.color = 'var(--accent-green)';
       }
       if (navigator.vibrate) navigator.vibrate(30);
     };
 
-    // --- НАВИГАЦИЯ И СОСТОЯНИЯ ---
-    function switchToTalkScreen() {
+    // --- НАВИГАЦИЯ ---
+    function openTalkScreen() {
       stopScanner();
       screenConnect.classList.remove('active');
       screenTalk.classList.add('active');
     }
 
-    function resetToHome() {
+    function resetUI() {
       stopScanner();
-      offlineInitial.style.display = 'block';
-      hostQrBox.style.display = 'none';
-      clientAnswerBox.style.display = 'none';
-      updateHomeStatus('В локальной сети. Создайте комнату', 'waiting');
+      startSection.style.display = 'block';
+      hostSection.style.display = 'none';
+      joinSection.style.display = 'none';
+      clientAnswerSection.style.display = 'none';
+      setHomeStatus('В локальной сети. Создайте комнату', 'waiting');
     }
 
-    function updateHomeStatus(text, type) {
+    function setHomeStatus(text, type) {
       homeStatusText.textContent = text;
       homeStatusDot.className = 'status-dot ' + type;
     }
 
-    document.getElementById('btnDisconnect').onclick = () => {
+    document.getElementById('btnHangup').onclick = () => {
       if (pc) { pc.close(); pc = null; }
-      if (peerInstance) { peerInstance.destroy(); peerInstance = null; }
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         localStream = null;
@@ -944,25 +951,10 @@
       chatBox.innerHTML = '';
       screenTalk.classList.remove('active');
       screenConnect.classList.add('active');
-      resetToHome();
+      resetUI();
     };
 
-    // Вкладки
-    document.getElementById('tabOffline').onclick = () => {
-      document.getElementById('tabOffline').classList.add('active');
-      document.getElementById('tabLocalIP').classList.remove('active');
-      document.getElementById('sectionOffline').style.display = 'block';
-      document.getElementById('sectionLocalIP').style.display = 'none';
-    };
-
-    document.getElementById('tabLocalIP').onclick = () => {
-      document.getElementById('tabLocalIP').classList.add('active');
-      document.getElementById('tabOffline').classList.remove('active');
-      document.getElementById('sectionOffline').style.display = 'none';
-      document.getElementById('sectionLocalIP').style.display = 'block';
-    };
-
-    // Разблокировка звука при первом касании (для мобильного Safari / Chrome)
+    // Разблокировка звука при первом тапе (iOS Safari / Android Chrome)
     window.addEventListener('touchstart', () => {
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       remoteAudio.play().catch(() => {});
