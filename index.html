@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Интерком P2P</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#121212">
+
+  <!-- PeerJS -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --surface-light: #2c2c2e;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f5f5f7;
+      --text-muted: #8e8e93;
+      --accent-green: #30d158;
+      --accent-red: #ff453a;
+      --accent-blue: #0a84ff;
+      --accent-yellow: #ffd60a;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Экраны */
+    .screen {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      padding: 20px;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Уведомление о HTTPS / ошибках */
+    .banner {
+      display: none;
+      background: rgba(255, 69, 58, 0.15);
+      border: 1px solid var(--accent-red);
+      color: #ff8580;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .header-bar h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .icon-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .icon-btn:active {
+      background: var(--surface-light);
+    }
+
+    .card {
+      background-color: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .my-id-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-light);
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .my-id-text {
+      font-family: monospace;
+      font-size: 20px;
+      letter-spacing: 2px;
+      font-weight: 700;
+      color: var(--accent-green);
+    }
+
+    .input-field {
+      width: 100%;
+      background: var(--surface-light);
+      border: 1px solid transparent;
+      outline: none;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      color: var(--text);
+      font-size: 18px;
+      text-align: center;
+      text-transform: uppercase;
+      font-family: monospace;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      user-select: text;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    /* Экран звонка */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 40px;
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-dot.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+    }
+
+    .status-dot.waiting {
+      background: var(--accent-yellow);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    .mic-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 15px 0;
+    }
+
+    .btn-mic {
+      width: 135px;
+      height: 135px;
+      border-radius: 50%;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+    }
+
+    .btn-mic.active {
+      background: radial-gradient(circle, #203a27 0%, #152219 100%);
+      border: 3px solid var(--accent-green);
+      color: var(--accent-green);
+      box-shadow: 0 0 30px rgba(48, 209, 88, 0.25);
+    }
+
+    .btn-mic.muted {
+      background: radial-gradient(circle, #381e1e 0%, #201313 100%);
+      border: 3px solid var(--accent-red);
+      color: var(--accent-red);
+      box-shadow: 0 0 30px rgba(255, 69, 58, 0.25);
+    }
+
+    .btn-mic svg {
+      width: 52px;
+      height: 52px;
+      fill: currentColor;
+    }
+
+    .mic-label {
+      margin-top: 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* Чат */
+    .chat-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      padding: 12px;
+      min-height: 0;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+      user-select: text;
+    }
+
+    .msg {
+      max-width: 80%;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .msg.me {
+      align-self: flex-end;
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    .msg.remote {
+      align-self: flex-start;
+      background: var(--surface-light);
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--surface-light);
+      border: none;
+      outline: none;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      color: var(--text);
+      font-size: 15px;
+      user-select: text;
+    }
+
+    .btn-send {
+      background: var(--accent-blue);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Модальное окно настроек звука */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    @media (min-width: 500px) {
+      .modal-overlay {
+        align-items: center;
+      }
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-sheet {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 480px;
+      animation: slideUp 0.25s ease-out;
+    }
+
+    @media (min-width: 500px) {
+      .modal-sheet {
+        border-radius: var(--radius-lg);
+      }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .select-group {
+      margin-bottom: 18px;
+    }
+
+    .select-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+      display: block;
+    }
+
+    .select-box {
+      width: 100%;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+    }
+
+    .select-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Скрытый аудиопоток с обходом ограничений мобильных браузеров -->
+  <audio id="remoteAudio" autoplay playsinline></audio>
+
+  <!-- ЭКРАН 1: ПОДКЛЮЧЕНИЕ -->
+  <div id="screenConnect" class="screen active">
+    <!-- Предупреждение о небезопасном контексте (HTTP на телефоне) -->
+    <div id="securityBanner" class="banner">
+      ⚠️ <b>Внимание:</b> Страница открыта без HTTPS! На мобильных телефонах браузер блокирует микрофон по обычному HTTP. Запустите через HTTPS (ngrok / Cloudflare / GitHub Pages).
+    </div>
+
+    <div class="header-bar">
+      <h1>Интерком</h1>
+      <button class="icon-btn" id="btnOpenSettings1" title="Настройки устройств">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ваш ID устройства</div>
+      <div class="my-id-box" id="copyIdBtn">
+        <span class="my-id-text" id="myIdDisplay">ПОДКЛЮЧЕНИЕ...</span>
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="color: var(--text-muted)">
+          <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </svg>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px; text-align: center;">
+        Нажмите на код, чтобы скопировать
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Подключиться к собеседнику</div>
+      <input type="text" id="remoteIdInput" class="input-field" placeholder="ID СОБЕСЕДНИКА" maxlength="10" autocomplete="off" spellcheck="false">
+      <button class="btn btn-primary" id="btnConnect">Подключиться</button>
+    </div>
+  </div>
+
+  <!-- ЭКРАН 2: РАЗГОВОР И ЧАТ -->
+  <div id="screenTalk" class="screen">
+    <div class="header-bar">
+      <div class="status-badge">
+        <div class="status-dot waiting" id="statusDot"></div>
+        <span id="statusText">Ожидание...</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="icon-btn" id="btnOpenSettings2" title="Настройки звука">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btnDisconnect" title="Завершить">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="mic-container">
+      <button class="btn-mic active" id="btnMicToggle">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </button>
+      <div class="mic-label" id="micStatusLabel" style="color: var(--accent-green)">Микрофон ВКЛ</div>
+    </div>
+
+    <div class="chat-card">
+      <div class="chat-messages" id="chatBox"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Сообщение..." autocomplete="off">
+        <button class="btn-send" id="btnSend">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО: ВЫБОР УСТРОЙСТВ ЗВУКА -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-sheet">
+      <div class="header-bar" style="margin-bottom: 16px;">
+        <h2 style="font-size: 18px;">Устройства звука</h2>
+        <button class="icon-btn" id="btnCloseSettings" style="width: 32px; height: 32px;">✕</button>
+      </div>
+
+      <div class="select-group">
+        <label class="select-label">МИКРОФОН (ВХОД)</label>
+        <select class="select-box" id="micSelect"></select>
+      </div>
+
+      <div class="select-group">
+        <label class="select-label">ДИНАМИК (ВЫХОД)</label>
+        <select class="select-box" id="speakerSelect"></select>
+        <div class="select-note" id="speakerNote"></div>
+      </div>
+
+      <button class="btn btn-primary" id="btnSaveSettings" style="margin-top: 10px;">Применить</button>
+    </div>
+  </div>
+
+  <script>
+    // --- ПЕРЕМЕННЫЕ СОСТОЯНИЯ ---
+    let peer = null;
+    let myId = '';
+    let localStream = null;
+    let activeCall = null;
+    let activeConn = null;
+    let isMuted = false;
+
+    let selectedMicId = '';
+    let selectedSpeakerId = '';
+
+    // --- DOM ССЫЛКИ ---
+    const screenConnect = document.getElementById('screenConnect');
+    const screenTalk = document.getElementById('screenTalk');
+    const securityBanner = document.getElementById('securityBanner');
+    const myIdDisplay = document.getElementById('myIdDisplay');
+    const remoteIdInput = document.getElementById('remoteIdInput');
+    const btnConnect = document.getElementById('btnConnect');
+    const copyIdBtn = document.getElementById('copyIdBtn');
+    const remoteAudio = document.getElementById('remoteAudio');
+
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const btnMicToggle = document.getElementById('btnMicToggle');
+    const micStatusLabel = document.getElementById('micStatusLabel');
+
+    const chatBox = document.getElementById('chatBox');
+    const chatInput = document.getElementById('chatInput');
+    const btnSend = document.getElementById('btnSend');
+
+    const settingsModal = document.getElementById('settingsModal');
+    const micSelect = document.getElementById('micSelect');
+    const speakerSelect = document.getElementById('speakerSelect');
+    const speakerNote = document.getElementById('speakerNote');
+    const btnOpenSettings1 = document.getElementById('btnOpenSettings1');
+    const btnOpenSettings2 = document.getElementById('btnOpenSettings2');
+    const btnCloseSettings = document.getElementById('btnCloseSettings');
+    const btnSaveSettings = document.getElementById('btnSaveSettings');
+
+    // Проверка HTTPS
+    function checkSecurityContext() {
+      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      if (!window.isSecureContext && !isLocalhost) {
+        securityBanner.style.display = 'block';
+      }
+    }
+
+    // Генерация короткого ID (префикс RT- исключает системные коллизии)
+    function generateId() {
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      let res = 'RT-';
+      for (let i = 0; i < 4; i++) {
+        res += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return res;
+    }
+
+    // Разблокировка AudioContext на мобильных устройствах
+    function unlockMobileAudio() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+      }
+      remoteAudio.play().catch(() => {});
+    }
+    document.addEventListener('touchstart', unlockMobileAudio, { once: true });
+    document.addEventListener('click', unlockMobileAudio, { once: true });
+
+    // --- ИНИЦИАЛИЗАЦИЯ ПОТОКА С УЧЕТОМ ВЫБРАННОГО МИКРОФОНА ---
+    async function initAudioStream() {
+      if (localStream) return localStream;
+
+      const audioConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        latency: 0
+      };
+
+      if (selectedMicId) {
+        audioConstraints.deviceId = { exact: selectedMicId };
+      }
+
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: audioConstraints
+        });
+        
+        // После выдачи разрешения обновляем список устройств с реальными именами
+        await loadAudioDevices();
+        return localStream;
+      } catch (err) {
+        alert('Ошибка микрофона: ' + err.name + ' — ' + err.message);
+        throw err;
+      }
+    }
+
+    // --- СПИСОК УСТРОЙСТВ (МИКРОФОНЫ И ДИНАМИКИ) ---
+    async function loadAudioDevices() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        return;
+      }
+
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        
+        // Микрофоны
+        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+        micSelect.innerHTML = '';
+        audioInputs.forEach((d, idx) => {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.text = d.label || `Микрофон ${idx + 1}`;
+          if (d.deviceId === selectedMicId) opt.selected = true;
+          micSelect.appendChild(opt);
+        });
+
+        // Динамики
+        const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+        speakerSelect.innerHTML = '';
+
+        if ('setSinkId' in HTMLMediaElement.prototype) {
+          speakerNote.textContent = '';
+          speakerSelect.disabled = false;
+
+          audioOutputs.forEach((d, idx) => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.text = d.label || `Динамик ${idx + 1}`;
+            if (d.deviceId === selectedSpeakerId) opt.selected = true;
+            speakerSelect.appendChild(opt);
+          });
+        } else {
+          const opt = document.createElement('option');
+          opt.text = 'Управляется системой (iOS / Safari)';
+          speakerSelect.appendChild(opt);
+          speakerSelect.disabled = true;
+          speakerNote.textContent = 'iOS переключает динамик через системный пункт управления';
+        }
+      } catch (e) {
+        console.warn('Ошибка перечисления аудио-устройств:', e);
+      }
+    }
+
+    // --- ПЕРЕКЛЮЧЕНИЕ УСТРОЙСТВ «НА ЛЕТУ» ---
+    async function applyDeviceChanges() {
+      const newMicId = micSelect.value;
+      const newSpeakerId = speakerSelect.value;
+
+      // Смена динамика
+      if (newSpeakerId && newSpeakerId !== selectedSpeakerId && 'setSinkId' in remoteAudio) {
+        try {
+          await remoteAudio.setSinkId(newSpeakerId);
+          selectedSpeakerId = newSpeakerId;
+        } catch (e) {
+          console.error('Ошибка смены динамика:', e);
+        }
+      }
+
+      // Смена микрофона
+      if (newMicId && newMicId !== selectedMicId) {
+        selectedMicId = newMicId;
+
+        if (localStream) {
+          // Останавливаем старый трек
+          localStream.getAudioTracks().forEach(t => t.stop());
+
+          const newStream = await navigator.mediaDevices.getUserMedia({
+            video: false,
+            audio: {
+              deviceId: { exact: selectedMicId },
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+
+          const newTrack = newStream.getAudioTracks()[0];
+          newTrack.enabled = !isMuted;
+          localStream = newStream;
+
+          // Подменяем трек в активном WebRTC вызове
+          if (activeCall && activeCall.peerConnection) {
+            const senders = activeCall.peerConnection.getSenders();
+            const sender = senders.find(s => s.track && s.track.kind === 'audio');
+            if (sender) {
+              await sender.replaceTrack(newTrack);
+            }
+          }
+        }
+      }
+
+      settingsModal.classList.remove('active');
+    }
+
+    // --- ИНИЦИАЛИЗАЦИЯ PEERJS С НАДЕЖНЫМИ STUN-СЕРВЕРАМИ GOOGLE ---
+    function initPeer() {
+      myId = generateId();
+
+      peer = new Peer(myId, {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' }
+          ]
+        }
+      });
+
+      peer.on('open', (id) => {
+        myIdDisplay.textContent = id;
+      });
+
+      // При коллизии генерируем новый ID
+      peer.on('error', (err) => {
+        console.error('PeerJS ошибка:', err);
+        if (err.type === 'unavailable-id') {
+          setTimeout(initPeer, 300);
+        } else if (err.type === 'peer-unavailable') {
+          alert('Собеседник с таким ID не найден в сети.');
+          disconnect();
+        } else {
+          alert('Сетевая ошибка P2P: ' + err.type);
+        }
+      });
+
+      // Входящий голосовой вызов
+      peer.on('call', async (call) => {
+        try {
+          const stream = await initAudioStream();
+          call.answer(stream);
+          setupCall(call);
+          showTalk();
+        } catch (e) {
+          console.error('Ошибка ответа на звонок:', e);
+        }
+      });
+
+      // Входящий чат канал
+      peer.on('connection', (conn) => {
+        setupConn(conn);
+      });
+    }
+
+    // --- ОБРАБОТЧИКИ ВЫЗОВА И ЧАТА ---
+    function setupCall(call) {
+      activeCall = call;
+
+      call.on('stream', (stream) => {
+        remoteAudio.srcObject = stream;
+        remoteAudio.play().catch(e => console.log('Autoplay:', e));
+        updateStatus(true);
+      });
+
+      if (call.peerConnection) {
+        call.peerConnection.onconnectionstatechange = () => {
+          if (call.peerConnection.connectionState === 'connected') {
+            updateStatus(true);
+          } else if (['disconnected', 'failed', 'closed'].includes(call.peerConnection.connectionState)) {
+            disconnect();
+          }
+        };
+      }
+
+      call.on('close', disconnect);
+    }
+
+    function setupConn(conn) {
+      activeConn = conn;
+
+      conn.on('open', () => updateStatus(true));
+      conn.on('data', (data) => {
+        if (data && data.text) appendMsg('remote', data.text);
+      });
+      conn.on('close', disconnect);
+    }
+
+    // --- ИСХОДЯЩЕЕ ПОДКЛЮЧЕНИЕ ---
+    async function startConnect() {
+      const targetId = remoteIdInput.value.trim().toUpperCase();
+      if (!targetId) {
+        alert('Введите ID собеседника');
+        return;
+      }
+      if (targetId === myId) {
+        alert('Нельзя подключиться к самому себе');
+        return;
+      }
+
+      try {
+        const stream = await initAudioStream();
+        showTalk();
+        updateStatus(false);
+
+        const call = peer.call(targetId, stream);
+        setupCall(call);
+
+        const conn = peer.connect(targetId);
+        setupConn(conn);
+      } catch (e) {
+        console.error('Ошибка соединения:', e);
+      }
+    }
+
+    // --- ИНТЕРФЕЙС И СОСТОЯНИЯ ---
+    function showTalk() {
+      screenConnect.classList.remove('active');
+      screenTalk.classList.add('active');
+    }
+
+    function showConnect() {
+      screenTalk.classList.remove('active');
+      screenConnect.classList.add('active');
+    }
+
+    function updateStatus(connected) {
+      if (connected) {
+        statusDot.className = 'status-dot connected';
+        statusText.textContent = 'Подключено';
+      } else {
+        statusDot.className = 'status-dot waiting';
+        statusText.textContent = 'Соединение...';
+      }
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      if (localStream) {
+        localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+      }
+
+      if (isMuted) {
+        btnMicToggle.className = 'btn-mic muted';
+        micStatusLabel.textContent = 'Микрофон ВЫКЛ';
+        micStatusLabel.style.color = 'var(--accent-red)';
+      } else {
+        btnMicToggle.className = 'btn-mic active';
+        micStatusLabel.textContent = 'Микрофон ВКЛ';
+        micStatusLabel.style.color = 'var(--accent-green)';
+      }
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+
+    function sendChat() {
+      const text = chatInput.value.trim();
+      if (!text || !activeConn) return;
+
+      activeConn.send({ text });
+      appendMsg('me', text);
+      chatInput.value = '';
+    }
+
+    function appendMsg(sender, text) {
+      const div = document.createElement('div');
+      div.className = `msg ${sender}`;
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function disconnect() {
+      if (activeCall) { activeCall.close(); activeCall = null; }
+      if (activeConn) { activeConn.close(); activeConn = null; }
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+
+      isMuted = false;
+      btnMicToggle.className = 'btn-mic active';
+      micStatusLabel.textContent = 'Микрофон ВКЛ';
+      micStatusLabel.style.color = 'var(--accent-green)';
+      chatBox.innerHTML = '';
+      showConnect();
+    }
+
+    // --- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---
+    async function openSettings() {
+      // Запрашиваем микрофон если еще не запрашивали, чтобы получить имена устройств
+      if (!localStream) {
+        try {
+          await initAudioStream();
+        } catch(e) {}
+      }
+      await loadAudioDevices();
+      settingsModal.classList.add('active');
+    }
+
+    // --- СЛУШАТЕЛИ СОБЫТИЙ ---
+    btnConnect.addEventListener('click', startConnect);
+    btnDisconnect.addEventListener('click', disconnect);
+    btnMicToggle.addEventListener('click', toggleMute);
+
+    btnSend.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendChat();
+    });
+
+    copyIdBtn.addEventListener('click', () => {
+      if (!myId) return;
+      navigator.clipboard.writeText(myId).then(() => {
+        const old = myIdDisplay.textContent;
+        myIdDisplay.textContent = 'СКОПИРОВАНО!';
+        setTimeout(() => { myIdDisplay.textContent = old; }, 1200);
+      });
+    });
+
+    btnOpenSettings1.addEventListener('click', openSettings);
+    btnOpenSettings2.addEventListener('click', openSettings);
+    btnCloseSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
+    btnSaveSettings.addEventListener('click', applyDeviceChanges);
+
+    // Старт
+    window.addEventListener('DOMContentLoaded', () => {
+      checkSecurityContext();
+      initPeer();
+      loadAudioDevices();
+    });
+  </script>
+</body>
+</html>
